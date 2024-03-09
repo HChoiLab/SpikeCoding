@@ -220,4 +220,3 @@ dependencies:
     - matplotlib==3.8.2
     - pandas==2.2.1
     - semantic-version==2.10.0
-prefix: /storage/home/hcoda1/8/zmobille3/.conda/envs/trainsnn
