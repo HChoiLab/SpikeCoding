@@ -1,3 +1,3 @@
 # SpikeCoding
 
-insert readme info here
+create the necessary conda environment with "conda env create -f trainsnn.yml"
