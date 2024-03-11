@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from help_funcs import *
 
-os.mkdir('plotDir')
+if not os.path.exists('plotDir'):
+    os.mkdir('plotDir')
 
 stim = np.load(f'rawData/stim.npy')
 tf = stim.shape[0]
