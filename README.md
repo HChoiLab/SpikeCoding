@@ -16,7 +16,7 @@ Finally, add the environment to jupyter notebook
 Download Julia from [```this link```](https://julialang.org/downloads/).\
 From the command prompt, start Julia with the command
 ```julia```\
-Once you are in the Julia kernel, enter the commands
+Once you are in the Julia kernel, enter the commands\
 ```using Pkg```\
 ```Pkg.add("IJulia")```\
 this will make it so you can use Julia in a Jupyter notebook
