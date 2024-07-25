@@ -1,0 +1,138 @@
+from help_funcs import *
+# imports
+import snntorch as snn
+from snntorch import surrogate
+from snntorch import functional as SF
+from snntorch import utils
+
+# print('imported snntorch stuff')
+
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import torch.nn.functional as F
+
+# print('imported torch stuff')
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+import itertools
+import random
+import statistics
+import tqdm
+import sys
+
+# print('imported matplotlib, numpy,...')
+
+from sklearn.svm import SVR
+from sklearn.feature_selection import mutual_info_regression
+from sklearn.model_selection import train_test_split
+from sklearn.multioutput import MultiOutputRegressor
+import os
+from bayes_opt import BayesianOptimization
+
+alpha = 0.5
+
+num_steps = 1000
+tf = num_steps
+dt = 1
+tvec = np.arange(0,tf,dt)
+flag = torch.cuda.is_available()
+device = torch.device("cuda") if flag else torch.device("cpu")
+if flag:
+    torch.set_default_device('cuda')
+tf = num_steps
+######################################################################
+num_samples = 1
+mode = "shot" # type of stimulus
+batch_size = 1 # only one sample to learn
+######################################################################
+Nin = 100
+Nh = int(sys.argv[1])
+stimseed = int(sys.argv[2])
+modelseed= int(sys.argv[3])
+pcon = 0.3
+Nout = 100
+Ns = [Nin, Nh, Nout]
+layerNames = ['in', 'h', 'out']
+numLayers = len(layerNames)
+N_nrnVec = Ns
+T_R = 50
+delay = 0
+delta_t = 2
+train_frac = 0.5
+slideVec = np.arange(0,tf-T_R+dt,dt)
+tag = 'post'
+
+#numseeds = 1
+
+#print(f'seed {seednum}')
+torch.manual_seed(stimseed)
+random.seed(stimseed)
+np.random.seed(stimseed)
+dataset = RegressionDataset(timesteps=num_steps, num_samples=num_samples, mode=mode)
+
+torch.manual_seed(modelseed)
+model = ConDivNet2dStimSparse_countTimeReadout(timesteps=num_steps, Nin=Nin, Nh=Nh, Nout=Nout, pcon=pcon, alpha=alpha).to(device)
+
+# locate zero-value weights before training loop
+EPS = 1e-6
+locked_masks = {n: torch.abs(w) < EPS for n, w in model.named_parameters() if n.endswith('weight')} 
+
+loss_function = torch.nn.MSELoss()
+num_iter = 200 # train for this many iterations
+optimizer = torch.optim.Adam(params=model.parameters(), lr=1e-3)
+loss_hist = [] # record loss
+
+
+# training loop
+with tqdm.trange(num_iter) as pbar:
+    for _ in pbar:
+        minibatch_counter = 0
+        loss_epoch = []
+        feature = dataset.features
+        label = dataset.labels
+        feature = feature.to(device)
+        s = label.to(device)
+        readout, mem, spk1, spk2, spk3, spk4, spkh, spkout = model(s)
+        tmax = readout.shape[0]
+        loss_val = loss_function(readout, s[:tmax,:,:]) # calculate loss
+        optimizer.zero_grad() # zero out gradients
+        loss_val.backward() # calculate gradients
+
+        for n, w in model.named_parameters():
+            if w.grad is not None and n in locked_masks:
+                w.grad[locked_masks[n]] = 0
+
+        optimizer.step() # update weights
+    #         # store loss
+        loss_hist.append(loss_val.item())
+        minibatch_counter += 1
+        pbar.set_postfix(loss="%.3e" % loss_val.item()) # print loss p/batch
+        
+if not os.path.exists('lossPlots'):
+    os.mkdir('lossPlots')
+plt.plot(loss_hist,color='black')
+plt.ylabel('mse loss',fontsize=18)
+plt.xlabel('iteration no.',fontsize=18)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+fname = f'lossPlots/loss_v_iter_Nh{Nh}_seed{stimseed}.png'
+plt.savefig(fname,bbox_inches='tight',dpi=200)
+plt.close()
+
+plot2Dfit(s[:tmax,:,:].cpu(),readout.cpu(),stimseed,Nh,tag)
+#         makeRaster2D(s, spk1, spk2, spk3, spk4, spkh, spkout, mem, Nh, seednum, tag)
+
+if not os.path.exists('trainedModels'):
+    os.mkdir('trainedModels')
+if not os.path.exists(f'trainedModels/Nh{Nh}'):
+    os.mkdir(f'trainedModels/Nh{Nh}')
+if not os.path.exists(f'trainedModels/Nh{Nh}'):
+    os.mkdir(f'trainedModels/Nh{Nh}')
+fname = f'trainedModels/Nh{Nh}/modelseed{modelseed}_stimseed{stimseed}.pth'
+torch.save(model.state_dict(), fname)
+        
+        
