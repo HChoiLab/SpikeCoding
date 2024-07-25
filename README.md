@@ -4,16 +4,16 @@ This code reproduces the figures from the paper [```"Temporal resolution of spik
 
 ## Python Setup
 create the necessary conda environment with the command
-```conda env create -f trainsnn.yml```
+```conda env create -f trainsnn.yml```.\
 Once the environment is created, activate it with
-```conda activate trainsnn```
+```conda activate trainsnn```.\
 Make sure that ipykernel is installed:
-```conda install -c anaconda ipykernel```
+```conda install -c anaconda ipykernel```.\
 Finally, add the environment to jupyter notebook
-```python -m ipykernel install --user --name=trainsnn```
+```python -m ipykernel install --user --name=trainsnn```.\
 
 ## Julia setup
-Download Julia from [```this link```](https://julialang.org/downloads/)
+Download Julia from [```this link```](https://julialang.org/downloads/).
 From the command prompt, start Julia with the command
 ```julia```
 Once you are in the Julia kernel, enter the commands
