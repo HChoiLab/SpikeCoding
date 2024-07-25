@@ -1,12 +1,21 @@
 name: trainsnn
 channels:
   - defaults
+  - pytorch
+  - conda-forge
+  - nvidia
+  - anaconda
 dependencies:
+  - python ==3.9
+  - pytorch
+  - libpng
+  - libjpeg
   - torchvision
   - seaborn
   - snntorch
   - cython
   - torchaudio
+  - tensorflow
   - keras
   - cudnn
   - cudatoolkit
@@ -16,3 +25,5 @@ dependencies:
   - matplotlib
   - scikit-learn
   - scipy
+  - tqdm
+  - bayesian-optimization
